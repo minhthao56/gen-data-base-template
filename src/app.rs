@@ -1,5 +1,5 @@
 use csv::ReaderBuilder;
-use js_sys::{JsString, decode_uri_component};
+use js_sys::{decode_uri_component, JsString};
 use leptos::{ev::Event, *};
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::{FileReader, HtmlInputElement};
@@ -7,7 +7,7 @@ use web_sys::{FileReader, HtmlInputElement};
 use crate::{
     common::types::KeyVal,
     components::{checkbox::Checkbox, header::Header, select::Select},
-    helpers::{generate_csv_string, download_file_csv},
+    helpers::{detect_type_bash_field_name, download_file_csv, generate_csv_string},
 };
 
 #[component]
@@ -30,10 +30,11 @@ pub fn App(cx: Scope) -> impl IntoView {
             let headers = csv_reader.headers().unwrap();
 
             headers.iter().for_each(|header| {
+                let v = detect_type_bash_field_name(header.to_string());
                 set_values.update(|values| {
                     values.push(KeyVal {
                         key: header.to_string(),
-                        val: "Text".to_string(),
+                        val: v,
                     });
                 });
             });
@@ -48,13 +49,13 @@ pub fn App(cx: Scope) -> impl IntoView {
     };
 
     let handle_generate = move |_| {
-      let csv_string =   generate_csv_string(values.get(), 10);
+        log!("handle_generate");
+        let csv_string = generate_csv_string(values.get(), 10);
+        log!("{}", csv_string);
+        let data = decode_uri_component(csv_string.as_str()).unwrap();
 
-     let data =  decode_uri_component(csv_string.as_str()).unwrap();
-
-     let url = format!("data:text/csv;charset=utf-8,{}", data);
-     download_file_csv("test.csv".to_string(), url);
-     
+        let url = format!("data:text/csv;charset=utf-8,{}", data);
+        download_file_csv("test.csv".to_string(), url);
     };
 
     view! { cx,
